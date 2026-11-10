@@ -1,0 +1,6 @@
+{
+  "name": "L'Odyssée des Petits Explorateurs",
+  "description": "Jeu ludo-éducatif pour enfants de 6 à 11 ans pour apprendre à maîtriser la souris : survol, clic gauche, double-clic, clic droit, glisser-déposer et défi arcade réflexe avec vies et score.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

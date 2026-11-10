@@ -1,0 +1,694 @@
+/**
+ * Self-contained Single-File HTML Generator for "L'Odyssée des Petits Explorateurs"
+ * Generates a complete standalone .html file that runs offline with 5 mini-games + Arcade Challenge.
+ */
+
+export function generateSingleFileHtml(explorerName = 'Petit Explorateur'): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L'Odyssée des Petits Explorateurs - Version Autonome</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      font-family: 'Comic Sans MS', 'Fredoka', cursive, system-ui, sans-serif;
+      background: linear-gradient(135deg, #fef3c7, #fde68a, #fed7aa);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: #334155;
+    }
+    header {
+      background: linear-gradient(90deg, #f59e0b, #ea580c);
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    h1 { font-size: 20px; font-weight: 900; }
+    .badge-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .lvl-btn {
+      background: rgba(255,255,255,0.25);
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .lvl-btn.active {
+      background: white;
+      color: #ea580c;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .diff-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fffbeb;
+      padding: 8px 14px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #fde68a;
+      flex-wrap: wrap;
+    }
+    .diff-btn {
+      border: 1px solid #f59e0b;
+      background: #fef3c7;
+      color: #92400e;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .diff-btn.active {
+      background: #f59e0b;
+      color: white;
+    }
+    main {
+      flex: 1;
+      padding: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      border: 3px solid #fde68a;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .target-banner {
+      background: #0284c7;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 14px;
+      font-weight: bold;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .butterfly-field {
+      height: 320px;
+      background: linear-gradient(180deg, #bae6fd, #e0f2fe, #dcfce7);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      border: 2px dashed #38bdf8;
+    }
+    .butterfly {
+      position: absolute;
+      font-size: 44px;
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
+    }
+    .butterfly.flown {
+      transform: translateY(-200px) scale(0) rotate(45deg);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .tree-stage {
+      height: 320px;
+      background: linear-gradient(180deg, #bfdbfe, #f0fdf4);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      border: 2px dashed #4ade80;
+    }
+    .fruit {
+      position: absolute;
+      font-size: 40px;
+      cursor: pointer;
+      transition: top 0.6s cubic-bezier(0.5, 0, 0.75, 0);
+    }
+    .fruit.falling {
+      top: 250px !important;
+      opacity: 0.2;
+      pointer-events: none;
+    }
+    .basket {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 48px;
+    }
+    .chest-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 16px;
+      padding: 20px 0;
+    }
+    .chest-card {
+      background: #fdf4ff;
+      border: 3px solid #c084fc;
+      border-radius: 16px;
+      padding: 14px;
+      text-align: center;
+      font-size: 38px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chest-card.opened {
+      background: #fef08a;
+      border-color: #eab308;
+      pointer-events: none;
+    }
+    .shell-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 16px;
+      padding: 20px 0;
+    }
+    .shell-card {
+      background: #ecfeff;
+      border: 3px solid #06b6d4;
+      border-radius: 16px;
+      padding: 14px;
+      text-align: center;
+      font-size: 38px;
+      cursor: context-menu;
+      transition: all 0.2s;
+    }
+    .shell-card.opened {
+      background: #fef08a;
+      border-color: #14b8a6;
+      pointer-events: none;
+    }
+    .dnd-stage {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+      padding: 20px 0;
+    }
+    .slots-row, .shapes-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .slot, .shape {
+      width: 70px;
+      height: 70px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+    .slot {
+      border: 3px dashed #818cf8;
+      background: #e0e7ff;
+    }
+    .shape {
+      background: white;
+      border: 2px solid #818cf8;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .shape.placed {
+      opacity: 0.2;
+      pointer-events: none;
+    }
+    .arcade-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 30px;
+      text-align: center;
+    }
+    .arcade-target {
+      width: 220px;
+      height: 220px;
+      border-radius: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 54px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      border: 4px solid white;
+      transition: transform 0.15s;
+    }
+    .arcade-target:active { transform: scale(0.95); }
+    .next-btn {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      align-self: center;
+      margin-top: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .lives-bar { font-size: 20px; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <header>
+    <h1>🧭 L'Odyssée des Petits Explorateurs</h1>
+    <div class="badge-bar">
+      <button class="lvl-btn active" onclick="switchLevel(1)">1. Papillons (Survol)</button>
+      <button class="lvl-btn" onclick="switchLevel(2)">2. Verger (Clic Gauche)</button>
+      <button class="lvl-btn" onclick="switchLevel(3)">3. Coffres (Double-Clic)</button>
+      <button class="lvl-btn" onclick="switchLevel(4)">4. Coquillages (Clic Droit)</button>
+      <button class="lvl-btn" onclick="switchLevel(5)">5. Formes (Glisser)</button>
+      <button class="lvl-btn" onclick="switchLevel('arcade')" style="background:#4338ca;">⚡ Défi Ultime</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card" id="game-view">
+      <!-- Injected game view -->
+    </div>
+  </main>
+
+  <script>
+    // Audio synthesis
+    let audioCtx = null;
+    function beep(freq, duration = 0.15, type = 'sine') {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e){}
+    }
+
+    let currentLvl = 1;
+    let currentDiff = 1;
+    let arcadeScore = 0;
+    let arcadeLives = 5;
+    let arcadeHighScore = parseInt(localStorage.getItem('odyssee_meilleur_score') || '0', 10);
+    let arcadeTargetType = 'left';
+
+    function switchLevel(lvl) {
+      currentLvl = lvl;
+      currentDiff = 1;
+      document.querySelectorAll('.lvl-btn').forEach((b, i) => {
+        b.classList.remove('active');
+        if (i === (typeof lvl === 'number' ? lvl - 1 : 5)) b.classList.add('active');
+      });
+      renderCurrentGame();
+    }
+
+    function switchDiff(d) {
+      currentDiff = d;
+      renderCurrentGame();
+    }
+
+    function renderDiffBar() {
+      return \`
+        <div class="diff-bar">
+          <span>Difficulté :</span>
+          <button class="diff-btn \${currentDiff===1?'active':''}" onclick="switchDiff(1)">Niv. 1 ⭐</button>
+          <button class="diff-btn \${currentDiff===2?'active':''}" onclick="switchDiff(2)">Niv. 2 ⭐⭐</button>
+          <button class="diff-btn \${currentDiff===3?'active':''}" onclick="switchDiff(3)">Niv. 3 ⭐⭐⭐</button>
+          <button class="diff-btn \${currentDiff===4?'active':''}" onclick="switchDiff(4)">Niv. 4 ⭐⭐⭐⭐</button>
+          <button class="diff-btn \${currentDiff===5?'active':''}" onclick="switchDiff(5)">Niv. 5 ⭐⭐⭐⭐⭐</button>
+        </div>
+      \`;
+    }
+
+    function renderCurrentGame() {
+      const g = document.getElementById('game-view');
+      if (currentLvl === 1) renderGame1(g);
+      else if (currentLvl === 2) renderGame2(g);
+      else if (currentLvl === 3) renderGame3(g);
+      else if (currentLvl === 4) renderGame4(g);
+      else if (currentLvl === 5) renderGame5(g);
+      else if (currentLvl === 'arcade') renderArcade(g);
+    }
+
+    // 1. Hover
+    function renderGame1(g) {
+      const count = 3 + currentDiff;
+      const butterflies = ['🦋 Azur', '🦋 Rubis', '🦋 Émeraude', '🦋 Doré', '🦋 Violet', '🦋 Cyan', '🦋 Corail', '🦋 Ambre'].slice(0, count);
+      let targetIdx = 0;
+      g.innerHTML = \`
+        <h2>Jeu 1 : La Forêt des Papillons (Survol)</h2>
+        \${renderDiffBar()}
+        <div class="target-banner" id="t-banner">Trouve et survole : <span style="font-size:18px; color:#fde047;">\${butterflies[targetIdx]}</span></div>
+        <div class="butterfly-field" id="bf-field"></div>
+        <button id="next-btn" class="next-btn" style="display:none;" onclick="switchLevel(2)">Passer au Clic Gauche 🍎</button>
+      \`;
+      const field = document.getElementById('bf-field');
+      let flown = 0;
+      butterflies.forEach((name, i) => {
+        const b = document.createElement('div');
+        b.className = 'butterfly';
+        b.innerHTML = '🦋';
+        b.title = name;
+        b.style.left = (10 + (i * 22) % 75) + '%';
+        b.style.top = (20 + (i * 35) % 60) + '%';
+        b.onmouseenter = function() {
+          if (!b.classList.contains('flown')) {
+            if (i === targetIdx) {
+              b.classList.add('flown');
+              flown++;
+              targetIdx++;
+              beep(587, 0.2);
+              if (flown >= count) {
+                document.getElementById('next-btn').style.display = 'block';
+                document.getElementById('t-banner').innerHTML = 'Bravo ! Tous les papillons se sont envolés ! 🎉';
+              } else {
+                document.getElementById('t-banner').innerHTML = 'Trouve et survole : <span style="font-size:18px; color:#fde047;">' + butterflies[targetIdx] + '</span>';
+              }
+            } else {
+              beep(220, 0.08);
+            }
+          }
+        };
+        field.appendChild(b);
+      });
+    }
+
+    // 2. Left Click
+    function renderGame2(g) {
+      const count = 3 + currentDiff;
+      const fruits = ['🍎 Pomme', '🍌 Banane', '🍐 Poire', '🍊 Orange', '🍓 Fraise', '🍇 Raisin', '🍒 Cerise', '🍑 Pêche'].slice(0, count);
+      let targetIdx = 0;
+      g.innerHTML = \`
+        <h2>Jeu 2 : Le Verger Gourmand (Clic Gauche)</h2>
+        \${renderDiffBar()}
+        <div class="target-banner" id="t-banner" style="background:#ea580c;">Clique sur : <span style="font-size:18px; color:#fde047;">\${fruits[targetIdx]}</span></div>
+        <div class="tree-stage" id="tr-stage"><div class="basket">🧺</div></div>
+        <button id="next-btn" class="next-btn" style="display:none;" onclick="switchLevel(3)">Passer au Double-Clic 📦</button>
+      \`;
+      const stage = document.getElementById('tr-stage');
+      let harvested = 0;
+      fruits.forEach((name, i) => {
+        const f = document.createElement('div');
+        f.className = 'fruit';
+        f.innerHTML = name.split(' ')[0];
+        f.style.left = (12 + (i * 18) % 75) + '%';
+        f.style.top = (25 + (i * 28) % 45) + '%';
+        f.onclick = function() {
+          if (!f.classList.contains('falling')) {
+            if (i === targetIdx) {
+              f.classList.add('falling');
+              harvested++;
+              targetIdx++;
+              beep(440, 0.15, 'triangle');
+              if (harvested >= count) {
+                document.getElementById('next-btn').style.display = 'block';
+                document.getElementById('t-banner').innerHTML = 'Verger récolté avec succès ! 🍎🧺';
+              } else {
+                document.getElementById('t-banner').innerHTML = 'Clique sur : <span style="font-size:18px; color:#fde047;">' + fruits[targetIdx] + '</span>';
+              }
+            } else {
+              beep(220, 0.08);
+            }
+          }
+        };
+        stage.appendChild(f);
+      });
+    }
+
+    // 3. Double Click (Dans le désordre !)
+    function renderGame3(g) {
+      const count = 2 + currentDiff;
+      const colors = ['Jaune', 'Pourpre', 'Bleu', 'Vert', 'Rouge', 'Cyan', 'Orange'].slice(0, count);
+      // Shuffle target order so colors are NEVER asked in sequential order!
+      const shuffledTargets = [...colors].sort(() => Math.random() - 0.5);
+      let targetIdx = 0;
+      g.innerHTML = \`
+        <h2>Jeu 3 : La Grotte aux Coffres (Double-Clic dans le désordre)</h2>
+        \${renderDiffBar()}
+        <div class="target-banner" id="t-banner" style="background:#7c3aed;">Double-clic sur : <span style="font-size:18px; color:#fde047;">Coffre \${shuffledTargets[targetIdx]}</span></div>
+        <div class="chest-grid" id="ch-grid"></div>
+        <button id="next-btn" class="next-btn" style="display:none;" onclick="switchLevel(4)">Passer au Clic Droit 🐚</button>
+      \`;
+      const grid = document.getElementById('ch-grid');
+      let opened = 0;
+      colors.forEach((col) => {
+        const c = document.createElement('div');
+        c.className = 'chest-card';
+        c.innerHTML = '📦<br><small style="font-size:12px;">' + col + '</small>';
+        c.ondblclick = function() {
+          if (!c.classList.contains('opened')) {
+            if (col === shuffledTargets[targetIdx]) {
+              c.classList.add('opened');
+              c.innerHTML = '✨⭐✨<br><small style="font-size:12px; color:#16a34a; font-weight:bold;">Ouvert !</small>';
+              opened++;
+              targetIdx++;
+              beep(523, 0.1); setTimeout(() => beep(783, 0.2), 100);
+              if (opened >= count) {
+                document.getElementById('next-btn').style.display = 'block';
+                document.getElementById('t-banner').innerHTML = 'Tous les coffres ouverts ! 🌟';
+              } else {
+                document.getElementById('t-banner').innerHTML = 'Double-clic sur : <span style="font-size:18px; color:#fde047;">Coffre ' + shuffledTargets[targetIdx] + '</span>';
+              }
+            } else {
+              beep(240, 0.1);
+            }
+          }
+        };
+        grid.appendChild(c);
+      });
+    }
+
+    // 4. Right Click
+    function renderGame4(g) {
+      const count = 2 + currentDiff;
+      const shells = ['Bleu', 'Rose', 'Vert', 'Doré', 'Violet', 'Blanc', 'Rouge'].slice(0, count);
+      const shuffledTargets = [...shells].sort(() => Math.random() - 0.5);
+      let targetIdx = 0;
+      g.innerHTML = \`
+        <h2>Jeu 4 : L'Île aux Coquillages (Clic Droit)</h2>
+        \${renderDiffBar()}
+        <div class="target-banner" id="t-banner" style="background:#0d9488;">Fais un Clic Droit sur : <span style="font-size:18px; color:#fde047;">Coquillage \${shuffledTargets[targetIdx]}</span></div>
+        <div class="shell-grid" id="sh-grid"></div>
+        <button id="next-btn" class="next-btn" style="display:none;" onclick="switchLevel(5)">Passer au Glisser-Déposer 🧩</button>
+      \`;
+      const grid = document.getElementById('sh-grid');
+      let opened = 0;
+      shells.forEach((col) => {
+        const s = document.createElement('div');
+        s.className = 'shell-card';
+        s.innerHTML = '🐚<br><small style="font-size:12px;">' + col + '</small>';
+        s.oncontextmenu = function(e) {
+          e.preventDefault();
+          if (!s.classList.contains('opened')) {
+            if (col === shuffledTargets[targetIdx]) {
+              s.classList.add('opened');
+              s.innerHTML = '🫧✨🫧<br><small style="font-size:12px; color:#0d9488; font-weight:bold;">Perle !</small>';
+              opened++;
+              targetIdx++;
+              beep(659, 0.15, 'triangle');
+              if (opened >= count) {
+                document.getElementById('next-btn').style.display = 'block';
+                document.getElementById('t-banner').innerHTML = 'Toutes les perles récoltées au Clic Droit ! 🐚✨';
+              } else {
+                document.getElementById('t-banner').innerHTML = 'Fais un Clic Droit sur : <span style="font-size:18px; color:#fde047;">Coquillage ' + shuffledTargets[targetIdx] + '</span>';
+              }
+            } else {
+              beep(220, 0.08);
+            }
+          }
+          return false;
+        };
+        grid.appendChild(s);
+      });
+    }
+
+    // 5. Drag & Drop (Formes mélangées)
+    function renderGame5(g) {
+      const count = 2 + currentDiff;
+      const shapesDef = [
+        { id: 'cercle', icon: '🔴', name: 'Cercle' },
+        { id: 'carre', icon: '🟦', name: 'Carré' },
+        { id: 'triangle', icon: '🔺', name: 'Triangle' },
+        { id: 'etoile', icon: '⭐', name: 'Étoile' },
+        { id: 'coeur', icon: '💖', name: 'Cœur' },
+        { id: 'losange', icon: '🔷', name: 'Losange' },
+        { id: 'soleil', icon: '☀️', name: 'Soleil' },
+      ].slice(0, count);
+
+      const scrambled = [...shapesDef].sort(() => Math.random() - 0.5);
+      g.innerHTML = \`
+        <h2>Jeu 5 : Le Temple des Formes (Formes mélangées)</h2>
+        \${renderDiffBar()}
+        <div class="target-banner" style="background:#4338ca;">Clique sur une forme en bas, puis clique sur son ombre en haut !</div>
+        <div class="dnd-stage">
+          <div class="slots-row" id="slots-row"></div>
+          <div class="shapes-row" id="shapes-row"></div>
+        </div>
+        <button id="next-btn" class="next-btn" style="display:none;" onclick="switchLevel('arcade')">Lancer le Défi Ultime 🎮⚡</button>
+      \`;
+
+      let selected = null;
+      let placed = 0;
+      const slotsRow = document.getElementById('slots-row');
+      const shapesRow = document.getElementById('shapes-row');
+
+      shapesDef.forEach(s => {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.innerHTML = s.icon;
+        slot.onclick = function() {
+          if (selected === s.id) {
+            slot.style.background = '#86efac';
+            const shElem = document.getElementById('sh-' + s.id);
+            if (shElem) shElem.classList.add('placed');
+            placed++;
+            selected = null;
+            beep(783, 0.2);
+            if (placed >= count) {
+              document.getElementById('next-btn').style.display = 'block';
+            }
+          }
+        };
+        slotsRow.appendChild(slot);
+      });
+
+      scrambled.forEach(s => {
+        const sh = document.createElement('div');
+        sh.className = 'shape';
+        sh.id = 'sh-' + s.id;
+        sh.innerHTML = s.icon;
+        sh.onclick = function() {
+          selected = s.id;
+          beep(380, 0.08);
+        };
+        shapesRow.appendChild(sh);
+      });
+    }
+
+    // Arcade Challenge
+    let arcadeTimer = null;
+    let arcadeFirstClick = 0;
+
+    function renderArcade(g) {
+      if (arcadeLives <= 0) {
+        g.innerHTML = \`
+          <div class="arcade-card">
+            <h2>💔 Partie Terminée !</h2>
+            <p>Score : <strong style="font-size:24px; color:#ea580c;">\${arcadeScore} pts</strong></p>
+            <p>Meilleur Score : <strong>\${arcadeHighScore} pts</strong></p>
+            <button class="next-btn" onclick="arcadeLives=5; arcadeScore=0; renderArcade(document.getElementById('game-view'))">Rejouer le Défi Ultime ⚡</button>
+          </div>
+        \`;
+        return;
+      }
+
+      const types = [
+        { type: 'left', label: 'CLIC GAUCHE', bg: '#f59e0b', icon: '🟡' },
+        { type: 'right', label: 'CLIC DROIT', bg: '#9333ea', icon: '🟣' },
+        { type: 'double', label: 'DOUBLE-CLIC', bg: '#10b981', icon: '🟢' },
+      ];
+      const target = types[Math.floor(Math.random() * types.length)];
+      arcadeTargetType = target.type;
+
+      g.innerHTML = \`
+        <div class="arcade-card">
+          <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+            <div class="lives-bar">Vies : \${'❤️'.repeat(arcadeLives)}\${'🖤'.repeat(5 - arcadeLives)}</div>
+            <div style="font-weight:bold; font-size:18px;">Score : \${arcadeScore} | 🏆 Record : \${arcadeHighScore}</div>
+          </div>
+
+          <div id="arc-target" class="arcade-target" style="background:\${target.bg}; color:white;">
+            <span>\${target.icon}</span>
+            <span>\${target.label}</span>
+          </div>
+
+          <p id="arc-hint">Clique selon la consigne indiquée ! (1 erreur = 1 vie perdue)</p>
+        </div>
+      \`;
+
+      const tElem = document.getElementById('arc-target');
+      tElem.onclick = function() {
+        if (arcadeTargetType === 'left') {
+          handleArcadeWin();
+        } else if (arcadeTargetType === 'double') {
+          const now = Date.now();
+          if (now - arcadeFirstClick < 450) {
+            handleArcadeWin();
+            arcadeFirstClick = 0;
+          } else {
+            arcadeFirstClick = now;
+            beep(400, 0.08);
+          }
+        } else {
+          handleArcadeLose('Oups ! Clic Gauche fait alors qu\\'il fallait un Clic Droit !');
+        }
+      };
+
+      tElem.oncontextmenu = function(e) {
+        e.preventDefault();
+        if (arcadeTargetType === 'right') {
+          handleArcadeWin();
+        } else {
+          handleArcadeLose('Oups ! Clic Droit fait alors qu\\'il fallait autre chose !');
+        }
+        return false;
+      };
+    }
+
+    function handleArcadeWin() {
+      arcadeScore += 100;
+      beep(880, 0.15);
+      if (arcadeScore > arcadeHighScore) {
+        arcadeHighScore = arcadeScore;
+        localStorage.setItem('odyssee_meilleur_score', arcadeHighScore.toString());
+      }
+      renderArcade(document.getElementById('game-view'));
+    }
+
+    function handleArcadeLose(msg) {
+      arcadeLives--;
+      beep(150, 0.25, 'sawtooth');
+      renderArcade(document.getElementById('game-view'));
+    }
+
+    renderCurrentGame();
+  </script>
+</body>
+</html>`;
+}
+
+export function downloadStandaloneHtml(explorerName = 'Petit Explorateur') {
+  const htmlContent = generateSingleFileHtml(explorerName);
+  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = "odyssee-des-petits-explorateurs.html";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

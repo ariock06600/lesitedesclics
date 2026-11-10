@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+  header, footer, nav, button, .no-print {
+    display: none !important;
+  }
+  #diploma-certificate {
+    box-shadow: none !important;
+    border: 6px solid #d97706 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 800px !important;
+  }
+}
